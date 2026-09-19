@@ -1,0 +1,21 @@
+[project]
+name = "laya-api"
+version = "0.1.0"
+description = "Production REST API for the Laya RL model"
+readme = "README.md"
+authors = [
+    { name = "logix", email = "logixism@pm.me" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.141.1",
+    "laya>=0.3.3",
+    "uvicorn[standard]>=0.53.0",
+]
+
+[project.scripts]
+laya-api = "laya_api:main"
+
+[build-system]
+requires = ["uv_build>=0.12.9,<0.13.0"]
+build-backend = "uv_build"
