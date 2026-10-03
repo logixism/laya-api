@@ -2,7 +2,7 @@ import secrets
 
 from fastapi import Header, HTTPException, status
 
-from laya_api.config import API_KEY
+from systemone_model_api.config import API_KEY
 
 
 def authenticate(

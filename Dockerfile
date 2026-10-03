@@ -25,5 +25,5 @@ VOLUME /data/hf
 EXPOSE 8000
 
 # Requires the NVIDIA Container Toolkit; run with: docker run --gpus all ...
-# LAYA_API_KEY must be provided (-e LAYA_API_KEY=...), the app refuses to start without it.
-CMD ["laya-api"]
+# SYSTEMONE_API_KEY is required; SYSTEMONE_MODEL selects laya, clef, or clef-flash.
+CMD ["systemone-model-api"]

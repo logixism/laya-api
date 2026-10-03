@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Laya API",
+    "title": "SystemOne Model API",
     "version": "1.0.0"
   },
   "paths": {
@@ -88,6 +88,32 @@
   },
   "components": {
     "schemas": {
+      "Base64Image": {
+        "properties": {
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "image/png",
+              "image/jpeg",
+              "image/webp"
+            ],
+            "title": "Content Type"
+          },
+          "base64": {
+            "type": "string",
+            "maxLength": 5592408,
+            "minLength": 1,
+            "title": "Base64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "content_type",
+          "base64"
+        ],
+        "title": "Base64Image"
+      },
       "ChoiceQuestion": {
         "properties": {
           "type": {
@@ -175,13 +201,13 @@
                     }
                   ]
                 },
-                "type": "object"
-              },
-              {
-                "items": {
-                  "type": "string"
+                "propertyNames": {
+                  "enum": [
+                    "true",
+                    "false"
+                  ]
                 },
-                "type": "array"
+                "type": "object"
               },
               {
                 "type": "null"
@@ -201,6 +227,23 @@
       },
       "PredictRequest": {
         "properties": {
+          "model": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "laya",
+                  "clef",
+                  "clef-flash"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model",
+            "description": "Optional model assertion; must match SYSTEMONE_MODEL on the server."
+          },
           "state": {
             "anyOf": [
               {
@@ -209,10 +252,14 @@
               {
                 "additionalProperties": true,
                 "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
               }
             ],
             "title": "State",
-            "description": "Conversation state to evaluate; free text or a JSON object."
+            "description": "State to evaluate; free text, a JSON object, or a JSON array."
           },
           "questions": {
             "patternProperties": {
@@ -245,6 +292,24 @@
             "type": "object",
             "title": "Questions",
             "description": "Questions to answer, keyed by question id."
+          },
+          "images": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Base64Image"
+                },
+                {
+                  "type": "string",
+                  "maxLength": 5592440,
+                  "pattern": "(?i)^data:image/(png|jpeg|webp);base64,"
+                }
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Images",
+            "description": "Clef only. Embedded PNG, JPEG, or WebP images as base64 data URLs or {content_type, base64} objects. No remote URLs or file paths. At most 4 MiB and 16 megapixels each, 8 MiB total decoded bytes."
           }
         },
         "additionalProperties": false,

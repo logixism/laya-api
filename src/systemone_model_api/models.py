@@ -5,7 +5,9 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from laya_api.config import (
+from systemone_model_api.config import (
+    MAX_IMAGE_BYTES,
+    MAX_IMAGES,
     MAX_INSTRUCTIONS_LENGTH,
     MAX_OPTION_COUNT,
     MAX_OPTION_DESCRIPTION_LENGTH,
@@ -112,7 +114,7 @@ class NoulQuestion(BaseModel):
 
     type: Literal["noul"]
     instructions: str = Field(..., min_length=1, max_length=MAX_INSTRUCTIONS_LENGTH)
-    criteria: dict[str, str | None] | list[str] | None = Field(
+    criteria: dict[Literal["true", "false"], str | None] | None = Field(
         default=None,
         description=(
             "Optional. Criteria may be useful for giving semantic meaning "
@@ -127,11 +129,32 @@ Question = Annotated[
 ]
 
 
+class Base64Image(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    content_type: Literal["image/png", "image/jpeg", "image/webp"]
+    base64: str = Field(min_length=1, max_length=4 * ((MAX_IMAGE_BYTES + 2) // 3))
+
+
+ImageInput = Base64Image | Annotated[
+    str,
+    Field(
+        pattern=r"(?i)^data:image/(png|jpeg|webp);base64,",
+        max_length=4 * ((MAX_IMAGE_BYTES + 2) // 3) + 32,
+    ),
+]
+
+
 class PredictRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    state: str | dict[str, Any] = Field(
-        description="Conversation state to evaluate; free text or a JSON object.",
+    model: Literal["laya", "clef", "clef-flash"] | None = Field(
+        default=None,
+        description="Optional model assertion; must match SYSTEMONE_MODEL on the server.",
+    )
+
+    state: str | dict[str, Any] | list[Any] = Field(
+        description="State to evaluate; free text, a JSON object, or a JSON array.",
     )
     questions: dict[
         Annotated[
@@ -146,10 +169,21 @@ class PredictRequest(BaseModel):
     ] = Field(
         description="Questions to answer, keyed by question id.",
     )
+    images: list[ImageInput] = Field(
+        default_factory=list,
+        max_length=MAX_IMAGES,
+        description=(
+            "Clef only. Embedded PNG, JPEG, or WebP images as base64 data URLs "
+            "or {content_type, base64} objects. No remote URLs or file paths. "
+            "At most 4 MiB and 16 megapixels each, 8 MiB total decoded bytes."
+        ),
+    )
 
     @field_validator("state")
     @classmethod
-    def validate_state(cls, value: str | dict[str, Any]) -> str | dict[str, Any]:
+    def validate_state(
+        cls, value: str | dict[str, Any] | list[Any],
+    ) -> str | dict[str, Any] | list[Any]:
         if isinstance(value, str):
             if not value.strip():
                 raise ValueError("state must not be empty")
